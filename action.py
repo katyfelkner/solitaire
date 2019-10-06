@@ -1,6 +1,7 @@
 # action type
 
 # actions have card(s) (a list), a current pile, a target pile (no spot number needed since it's always spot 0), and an ID
+#optional flipBonus for when a card is flipped in a turn to account for +5 reward
 
 #ID:
 #1. moveBetweenPiles
@@ -13,8 +14,9 @@
 
 class Action:
 
-    def __init__(self, cards, pile, target,id):
+    def __init__(self, cards, pile, target,id,flipBonus=False):
         self.card = cards
         self.pile = pile
         self.target = target
         self.id = id
+        self.flipBonus = flipBonus

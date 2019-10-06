@@ -1,6 +1,7 @@
 from solitaire import Game
 from high_level_vector import HighLevelVector
 from low_level_vector import LowLevelVector
+from action import Action
 from numpy import array
 import numpy as np
 
@@ -14,18 +15,25 @@ class agent:
         possible_moves = state.getPossibleMoves()
         rewards = []
 
+        if len(possible_moves) == 0:
+            return Action(None,None,None,-1)
+
         #get rewards corresponding to all possible moves
         for i in range(len(possible_moves)):
 
-            #TODO can cause card flip +5 reward
-            #if action is a move between piles, 0 reward
+            #if action is a move between piles, 0 reward (or 5 if a card is flipped as a result)
             if possible_moves[i].id == 1:
-                rewards[i] = 0
+                if possible_moves[i].flipBonus:
+                    rewards[i]=5
+                else:
+                    rewards[i] = 0
 
-            # TODO can cause card flip +5 reward
-            #if action is a move from pile to block, 10 reward
+            #if action is a move from pile to block, 10 reward (or 15 if a card is flipped as a result)
             elif possible_moves[i].id == 2:
-                rewards[i] = 10
+                if possible_moves[i].flipBonus:
+                    rewards[i]=15
+                else:
+                    rewards[i] = 10
 
             #if action is a move from block to pile, -15 reward
             elif possible_moves[i].id == 3:
@@ -55,10 +63,11 @@ class agent:
             return possible_moves[random_choice]
 
         #else choose move with hightest reward
-        #TODO decide how you want to handle if multiple actions have same max reward- pick one at random? Always choose first?
-        #TODO currently index(max) takes first occurence of the max value
-        max_index = rewards.index(max(rewards))
-        return possible_moves[max_index]
+        #if there are multiple actions with the max reward, choose one of them at random
+        maxReward = max(rewards)
+        maxIndices = [i for i, j in enumerate(rewards) if j==maxReward]
+        randomMaxIndex = np.random.randint(0,len(maxIndices))
+        return possible_moves[randomMaxIndex]
 
     """
     @param alpha- learning rate
@@ -71,6 +80,7 @@ class agent:
 
         total_moves = []
         final_scores = []
+        wins = []
 
         #Get initial Q, depending on whether high or low level features
         if high_level:
@@ -94,7 +104,6 @@ class agent:
 
                 #make a move, update state and total score
                 # state automatically updates when making a move, no need to manually update value
-                #TODO make sure make move method returns reward
                 reward = state.make_move(action)
                 total_score += reward
                 moves += 1
@@ -105,7 +114,7 @@ class agent:
 
                 #Update Q, feature weights, state, action
                 Q += alpha*[reward+(gamma*next_Q-Q)]
-                features.update_weights()
+                features.update_weights(alpha,gamma,reward)
                 action = next_action
 
                 #If in terminal state (either won, can't move, or exceed move limit) break out of while loop
@@ -114,24 +123,26 @@ class agent:
                         won = True
                     break
 
-            #Update score based off of win/loss
+            #Update score and wins/losses list based off of win/loss
             if won:
                 total_score += 1000
+                wins.append(1)
             else:
                 total_score -= 1000
+                wins.append(0)
 
             total_moves.append(moves)
             final_scores.append(total_score)
 
-        return total_moves, final_scores
+        return total_moves, final_scores, wins
 
     LEARNING_RATE = 0.1
     DISCOUNT_FACTOR = 0.9
     EPSILON = 0.9
     NUM_TRAINING_GAMES = 10
     MOVE_LIMIT = 500
-    HIGH_LEVEL = True
+    HIGH_LEVEL = False
 
-    total_moves, final_scores = SARSA(LEARNING_RATE,DISCOUNT_FACTOR,EPSILON,NUM_TRAINING_GAMES,MOVE_LIMIT,HIGH_LEVEL)
+    total_moves, final_scores, wins = SARSA(LEARNING_RATE,DISCOUNT_FACTOR,EPSILON,NUM_TRAINING_GAMES,MOVE_LIMIT,HIGH_LEVEL)
 
     #TODO: use total move and final score data to do some graphing / analysis
