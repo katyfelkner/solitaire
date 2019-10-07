@@ -28,8 +28,8 @@ class Game:
 
     def getGameElements(self):
         returnObject = {
-            "playPiles": [str(pile) for pile in self.playPiles],
-            "blockPiles": {suit: str(pile) for suit, pile in self.blockPiles.items()},
+            "playPiles": [pile for pile in self.playPiles],
+            "blockPiles": {suit: pile for suit, pile in self.blockPiles.items()},
             "trash pile up": ", ".join([str(card) for card in self.trashPileUp]),
             "trash pile down": ", ".join([str(card) for card in self.trashPileDown])
         }
@@ -251,7 +251,7 @@ class Game:
                             #if end of pile2 can be appended by top of a pile1 pile add it to actions
                             if self.checkCardOrder(pile2.cards[0], cards_to_transfer[-1]):
                                 #if the move opens a card to be flipped, give flip bonus +5 reward
-                                if (len(cards_to_transfer) == len(pile2_flipped_cards)) and not len(pile2_flipped_cards)==len(pile2.cards):
+                                if (len(cards_to_transfer) == len(pile1_flipped_cards)) and not len(pile1_flipped_cards)==len(pile1.cards):
                                     actions.append(Action(reversed(cards_to_transfer),pile1,pile2,1,flipBonus=True))
                                 else:
                                     actions.append(Action(reversed(cards_to_transfer), pile1, pile2, 1))
@@ -270,17 +270,19 @@ class Game:
                 add = self.canAddToBlock(pile.cards[0])
                 if add:
                     #if the move opens a card to be flipped, give flip bonus +5 reward
-                    if len(pile.getFlippedCards()) > 1:
-                        actions.append(Action([pile.cards[0]], pile, add,2,flipBonus=True))
+                    if len(pile.getFlippedCards()) == 1 and len(pile.cards) > 1:
+                        actions.append(Action(pile.cards[0], pile, add,2,flipBonus=True))
                     else:
-                        actions.append(Action([pile.cards[0]], pile, add, 2))
+                        actions.append(Action(pile.cards[0], pile, add, 2))
 
         #3. Find all moves from blocks to play piles (negative reward)
         for suit in self.suits:
             if len(self.blockPiles[suit].cards) > 0:
                 add = self.canMoveBlockToPile(self.blockPiles[suit].cards[0])
                 if add:
-                    actions.extend([Action(self.blockPiles[suit].cards[0], self.blockPiles[suit], i.cards,3) for i in add])
+                    for dest in add:
+                        actions.append(Action(self.blockPiles.get(suit).cards[0],self.blockPiles[suit],dest,3))
+                    #actions.append(Action(self.blockPiles.get(suit).cards[0], self.blockPiles[suit], i.cards, 3) for i in add)
 
         #for block in self.blockPiles:
         #    add = self.canMoveBlockToPile(block.cards[0])
@@ -319,15 +321,18 @@ class Game:
 
 #################################################################################
 
-    #TODO
     #1. Move a card between two piles - no reward
     def moveBetweenPiles(self,movingCards,origin,dest):
 
-        origin.pop(-1)
-        dest.append(movingCards)
+        origin.cards.pop(0)
+
+        for card in movingCards:
+            dest.addCard(card)
+
+        #print("moved between piles")
 
         if len(origin.cards) > 0 and not origin.cards[0].flipped:
-            origin.cards[0].flip
+            origin.cards[0].flip()
             return 5
         else:
             return 0
@@ -336,26 +341,29 @@ class Game:
     def movePileToBlock(self,movingCards,origin,dest):
 
         self.addToBlock(movingCards)
-        origin.pop(-1)
+        origin.cards.pop(0)
+        #print("Adding play pile card to block: {0}".format(str(movingCards)))
 
         #+5 reward if moving card causes a flip
         if len(origin.cards) > 0 and not origin.cards[0].flipped:
-            origin.cards[0].flip
+            origin.cards[0].flip()
             return 15
         else:
             return 10
 
     #3. Move a card from block back to pile - reward -15
     def moveBlockToPile(self,movingCards,origin,dest):
-        origin.pop(-1)
+        origin.cards.pop(0)
         dest.addCard(movingCards)
+        #print("Moving card from block to pile: {0}".format(str(movingCards)))
         return -15
 
     #4. Draw a card from the deck - no reward
     def drawDeck(self,movingCards,origin,dest):
-        self.trashPileDown.pop(-1)
+        self.trashPileDown.pop(0)
         movingCards.flip()
         self.trashPileUp.append(movingCards)
+        #print("drew {0} from deck".format(str(movingCards)))
         return 0
 
     #5. Recycle deck - reward -100
@@ -364,19 +372,21 @@ class Game:
         self.trashPileUp = []
         for i in self.trashPileDown:
             i.flip()
-
+        #print("Recycling deck")
         return -100
 
     #6. Move a card from waste to pile - reward 5
     def wasteToPile(self,movingCards,origin,dest):
         dest.addCard(movingCards)
         self.trashPileUp.pop(-1)
+        #print("Moving {0} from Deck to Pile".format(str(movingCards)))
         return 5
 
     #7. Move a card from waste to block - reward 10
     def wasteToBlock(self,movingCards,origin,dest):
         self.addToBlock(movingCards)
         self.trashPileUp.pop(-1)
+        #print("Adding card from deck to block: {0}".format(str(movingCards)))
         return 10
 
     def make_move(self,action):
