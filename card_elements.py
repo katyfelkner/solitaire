@@ -26,7 +26,12 @@ class Pile:
             self.cards[0].flip()
             
     def getFlippedCards(self):
-        return [card for card in self.cards if card.flipped]
+        flipped = []
+        for c in self.cards:
+            if c.flipped:
+                flipped.append(c)
+
+        return flipped
     
     def __str__(self):        
         returnedCards = [str(card) for card in reversed(self.getFlippedCards())]

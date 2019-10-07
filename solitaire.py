@@ -280,16 +280,11 @@ class Game:
             if len(self.blockPiles[suit].cards) > 0:
                 add = self.canMoveBlockToPile(self.blockPiles[suit].cards[0])
                 if add:
-                    actions.extend([Action(self.blockPiles[suit].cards[0], self.blockPiles[suit], i.cards,3) for i in add])
-
-        #for block in self.blockPiles:
-        #    add = self.canMoveBlockToPile(block.cards[0])
-        #    if len(block.cards) > 0 and add:
-        #        actions.extend([Action([block.cards[0]], block, add[i]) for i in add])
+                    actions.extend([Action([self.blockPiles[suit].cards[0]], self.blockPiles[suit], i ,3) for i in add])
 
         #4. Check if can draw card from waste pile
         if len(self.trashPileDown) > 0:
-            actions.append(Action(self.trashPileDown[0], self.trashPileDown, self.trashPileUp,4))
+            actions.append(Action([self.trashPileDown[0]], self.trashPileDown, self.trashPileUp,4))
 
         #5. Check if can recycle waste pile
         if len(self.trashPileDown) < 1:
@@ -302,18 +297,18 @@ class Game:
 
             if len(self.trashPileUp) > 0:
                 if len(pile.cards)==0 and self.trashPileUp[-1].value=='K':
-                    actions.append(Action(self.trashPileUp[-1],self.trashPileUp,pile,6))
+                    actions.append(Action([self.trashPileUp[-1]],self.trashPileUp,pile,6))
 
                 if len(pile.cards) > 0:
                     add = self.checkCardOrder(pile.cards[0], self.trashPileUp[-1])
                     if add:
-                        actions.append(Action(self.trashPileUp[-1], self.trashPileUp, pile,6))
+                        actions.append(Action([self.trashPileUp[-1]], self.trashPileUp, pile,6))
 
         #7. Find all moves from trash to blocks
         if len(self.trashPileUp) > 0:
             add = self.canAddToBlock(self.trashPileUp[-1])
             if add:
-                actions.append(Action(self.trashPileUp[-1], self.trashPileUp, add,7))
+                actions.append(Action([self.trashPileUp[-1]], self.trashPileUp, add,7))
 
         return actions
 
@@ -323,11 +318,12 @@ class Game:
     #1. Move a card between two piles - no reward
     def moveBetweenPiles(self,movingCards,origin,dest):
 
-        origin.pop(-1)
-        dest.append(movingCards)
+        for m in movingCards:
+            dest.addCard(m)
+            origin.cards.pop(0)
 
         if len(origin.cards) > 0 and not origin.cards[0].flipped:
-            origin.cards[0].flip
+            origin.cards[0].flip()
             return 5
         else:
             return 0
@@ -336,27 +332,27 @@ class Game:
     def movePileToBlock(self,movingCards,origin,dest):
 
         self.addToBlock(movingCards)
-        origin.pop(-1)
+        origin.cards.pop(0)
 
         #+5 reward if moving card causes a flip
         if len(origin.cards) > 0 and not origin.cards[0].flipped:
-            origin.cards[0].flip
-            return 15
+            origin.cards[0].flip()
+            return 1500
         else:
-            return 10
+            return 1000
 
     #3. Move a card from block back to pile - reward -15
     def moveBlockToPile(self,movingCards,origin,dest):
-        origin.pop(-1)
+        origin.cards.pop(0)
         dest.addCard(movingCards)
         return -15
 
     #4. Draw a card from the deck - no reward
     def drawDeck(self,movingCards,origin,dest):
-        self.trashPileDown.pop(-1)
+        self.trashPileDown.pop(0)
         movingCards.flip()
         self.trashPileUp.append(movingCards)
-        return 0
+        return -10
 
     #5. Recycle deck - reward -100
     def recycleDeck(self):
@@ -371,13 +367,13 @@ class Game:
     def wasteToPile(self,movingCards,origin,dest):
         dest.addCard(movingCards)
         self.trashPileUp.pop(-1)
-        return 5
+        return 50
 
     #7. Move a card from waste to block - reward 10
     def wasteToBlock(self,movingCards,origin,dest):
         self.addToBlock(movingCards)
         self.trashPileUp.pop(-1)
-        return 10
+        return 1000
 
     def make_move(self,action):
 
@@ -389,19 +385,19 @@ class Game:
             return self.moveBetweenPiles(movingCards,origin,dest)
 
         elif action.id == 2:
-            return self.movePileToBlock(movingCards,origin,dest)
+            return self.movePileToBlock(movingCards[0],origin,dest)
 
         elif action.id == 3:
-            return self.moveBlockToPile(movingCards,origin,dest)
+            return self.moveBlockToPile(movingCards[0],origin,dest)
 
         elif action.id == 4:
-            return self.drawDeck(movingCards,origin,dest)
+            return self.drawDeck(movingCards[0],origin,dest)
 
         elif action.id == 5:
             return self.recycleDeck()
 
         elif action.id == 6:
-            return self.wasteToPile(movingCards,origin,dest)
+            return self.wasteToPile(movingCards[0],origin,dest)
 
         elif action.id == 7:
-            return self.wasteToBlock(movingCards,origin,dest)
+            return self.wasteToBlock(movingCards[0],origin,dest)

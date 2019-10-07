@@ -9,7 +9,7 @@ class agent:
 
     #Function to choose what action to take next, depending on next state and epsilon
     #@return next action
-    def epsilon_greedy(state,epsilon):
+    def epsilon_greedy(self,state,epsilon):
 
         #find all valid moves that can be made- returns list of action objects
         possible_moves = state.getPossibleMoves()
@@ -76,7 +76,7 @@ class agent:
     @param num_games - number games for training
     @param max_moves - maximum moves until game is considered a loss
     """
-    def SARSA(alpha, gamma, epsilon, num_games, max_moves,high_level):
+    def SARSA(self, alpha, gamma, epsilon, num_games, max_moves,high_level):
 
         total_moves = []
         final_scores = []
@@ -97,7 +97,7 @@ class agent:
 
             #get initial state, action, Q, based on new game
             state = Game()
-            action = epsilon_greedy(state,epsilon)
+            action = self.epsilon_greedy(state,epsilon)
             Q = features.get_Q(state,action)
 
             while moves < max_moves:
@@ -109,7 +109,7 @@ class agent:
                 moves += 1
 
                 #get next action using epsilon greedy and corresponding Q
-                next_action = epsilon_greedy(state,epsilon)
+                next_action = self.epsilon_greedy(state,epsilon)
                 next_Q = features.get_Q(state,next_action)
 
                 #Update Q, feature weights, state, action
