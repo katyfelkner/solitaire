@@ -106,6 +106,7 @@ def SARSA(alpha, gamma, epsilon, num_games, max_moves,high_level,f_moves,f_score
             wins.append(0)
             #f_wins.write("0, ")
 
+
         # print("score: " + str(total_score) + ", moves: " + str(total_moves) + ",won: " + str(won) )
         total_moves.append(moves)
         final_scores.append(total_score)

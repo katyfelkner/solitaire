@@ -1,6 +1,7 @@
 # this file should contain an implementation of a Low-level state vector
 
 # tentatively, using numpy arrays for vectors
+import numpy
 from numpy import array
 from solitaire import Game
 import numpy
@@ -23,6 +24,7 @@ class LowLevelVector:
         # this method should update the vector according to the game elements "printout" received from self.game
         # implementation will depend on what we do for features
 
+        # TODO: syntax issues, block and playpiles are backwards
         gameElements = state.getGameElements()
         blockPiles = gameElements.get("blockPiles")
         i=1
@@ -43,6 +45,7 @@ class LowLevelVector:
         for pile in playPiles:
             self.LowLevelFeatures[i] = len(pile.getFlippedCards())
             i += 1
+
 
     def update_weights(self,alpha, delta):
         for i in range(len(self.LowLevelWeights)):

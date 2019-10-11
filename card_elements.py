@@ -32,6 +32,7 @@ class Pile:
                 cards.append(card)
         return cards
         #return [card for card in self.cards if card.flipped]
+
     
     def __str__(self):        
         returnedCards = [str(card) for card in reversed(self.getFlippedCards())]
