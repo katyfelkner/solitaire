@@ -50,7 +50,7 @@ class QLearningAgent:
         # we are assuming the low-level features for now
         # TODO: check this
 
-    def decreasing_e_greedy(self, num_games, epsilon, game):
+    def decreasing_e_greedy(self, num_games, epsilon):
         """
         Apply an e-greedy policy with decreasing epsilon to choose next action.
 
@@ -65,7 +65,7 @@ class QLearningAgent:
         scaled_epsilon = epsilon * (self.NUM_GAMES - num_games) / self.NUM_GAMES
 
         # get all possible moves for the state
-        possible_moves = game.getPossibleMoves()
+        possible_moves = self.game.getPossibleMoves()
 
         # if no possible moves, there is no action and we should return none
         if len(possible_moves) == 0:
@@ -75,13 +75,16 @@ class QLearningAgent:
         if random.random() < scaled_epsilon:
             return random.choice(possible_moves)
 
-        # else, choose based on a predicted q
-
+            # else, choose based on a predicted q
+        """
         max_q = None
         max_a = []
         for a in possible_moves:
             # calculate q(s, a)
-            Q_a = sum([self.feature_vector[i] * self.weights[i] for i in range(len(self.feature_vector))])
+
+            # TODO: this line is very wrong
+            Q_a = self.game.get_predicted_reward(a) + self.GAMMA * sum(self.feature_vector[i] * self.weights[i] for i in range(len(self.feature_vector)))
+
             # compare to max
             if max_q is None or Q_a > max_q:
                 max_q = Q_a
@@ -89,6 +92,30 @@ class QLearningAgent:
             elif Q_a == max_q:
                 # need to select randomly among equal q values
                 max_a.append(a)
+
+        """
+        # else, choose based on a predicted q
+
+        max_q = None
+        max_a = []
+        for a in possible_moves:
+            # calculate q(s, a)
+            try:
+                reward, new_game = self.game.test_move(a)
+                s_prime = self.get_features(new_game)
+
+                Q_a = reward + self.GAMMA * sum(s_prime[i] * self.weights[i] for i in range(len(s_prime)))
+
+                # compare to max
+                if max_q is None or Q_a > max_q:
+                    max_q = Q_a
+                    max_a = [a]
+                elif Q_a == max_q:
+                    # need to select randomly among equal q values
+                    max_a.append(a)
+            except:
+                # remove from set of legal moves
+                possible_moves.remove(a)
 
         # return action with maximum q
         if len(max_a) == 0:
@@ -116,7 +143,7 @@ class QLearningAgent:
 
             while moves < self.MOVES_PER_GAME:
                 # choose A according to a policy
-                action = self.decreasing_e_greedy(i, self.INITIAL_EPSILON, self.game)
+                action = self.decreasing_e_greedy(i, self.INITIAL_EPSILON)
                 if action is None:
                     break
 
@@ -163,23 +190,32 @@ class QLearningAgent:
 
     # update feature vector
     # DO NOT update first value- always keep at 1
-    def get_features(self):
-        # this method should return a feature vector according to the game elements "printout" received from self.game
-
+    def get_features(self, thisGame=None):
+        # this method should return a feature vector according to the game elements "printout" received from self.game or the specified game
         return_vector = [1]
-        for pile in self.game.blockPiles.values():
-            return_vector.append(len(pile.cards))
+        if thisGame:
+            for pile in thisGame.blockPiles.values():
+                return_vector.append(len(pile.cards))
 
-        # get number of flipped cards in each play pile and update
-        for pile in self.game.playPiles:
-            return_vector.append(len(pile.getFlippedCards()))
+                # get number of flipped cards in each play pile and update
+            for pile in thisGame.playPiles:
+                return_vector.append(len(pile.getFlippedCards()))
+
+        else:
+
+            for pile in self.game.blockPiles.values():
+                return_vector.append(len(pile.cards))
+
+            # get number of flipped cards in each play pile and update
+            for pile in self.game.playPiles:
+                return_vector.append(len(pile.getFlippedCards()))
 
         return return_vector
 
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EPSILON = 0.1
-NUM_TRAINING_GAMES = 5000
+NUM_TRAINING_GAMES = 1000
 MOVE_LIMIT = 1000
 
 agent = QLearningAgent(EPSILON, DISCOUNT_FACTOR, LEARNING_RATE, MOVE_LIMIT, NUM_TRAINING_GAMES)

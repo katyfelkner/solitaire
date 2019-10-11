@@ -12,6 +12,7 @@
 #6. wasteToPile
 #7. wasteToBlock
 
+import solitaire
 class Action:
 
     def __init__(self, cards, pile, target,id,flipBonus=False):
@@ -20,3 +21,31 @@ class Action:
         self.target = target
         self.id = id
         self.flipBonus = flipBonus
+
+    def __str__(self):
+        if isinstance(self.target, solitaire.Pile) and self.card is not None:
+            if len(self.target.cards) > 0:
+                return "id: " + str(self.id) + ", move: " + str(self.card[0]) + "to " + str(self.target.cards[0])
+            else:
+                return "id: " + str(self.id) + ", move: " + str(self.card[0]) + "to empty"
+        elif self.card is not None:
+            if len(self.target) > 0:
+                return "id: " + str(self.id) + ", flip: " + str(self.card[0]) + "to " + str(self.target[0])
+            else:
+                return "id: " + str(self.id) + ", move: " + str(self.card[0]) + "to other side of trash"
+        else:
+            return "id: " + str(self.id) + ", recycle deck"
+
+    def __repr__(self):
+        if isinstance(self.target, solitaire.Pile) and self.card is not None:
+            if len(self.target.cards) > 0:
+                return "id: " + str(self.id) + ", move: " + str(self.card[0]) + "to " + str(self.target.cards[0])
+            else:
+                return "id: " + str(self.id) + ", move: " + str(self.card[0]) + "to empty"
+        elif self.card is not None:
+            if len(self.target) > 0:
+                return "id: " + str(self.id) + ", flip: " + str(self.card[0]) + "to " + str(self.target[0])
+            else:
+                return "id: " + str(self.id) + ", move: " + str(self.card[0]) + "to other side of trash"
+        else:
+            return "id: " + str(self.id) + ", recycle deck"
