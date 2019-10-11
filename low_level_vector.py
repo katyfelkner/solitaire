@@ -1,50 +1,55 @@
-# this file should contain an implementation of a low-level state vector
+# this file should contain an implementation of a Low-level state vector
 
 # tentatively, using numpy arrays for vectors
 import numpy
 from numpy import array
 from solitaire import Game
+import numpy
 
 class LowLevelVector:
+
     # vector keeps track of its game and updates itself from the game
     #numpy array representation
     #1: feature that is always 1 for weight stuff
     #2-5: number face-up cards in block piles
     #6-12: number face-up cards in each play pile
     #keep corresponding weight array of feature vector
-    def __init__(self, game):
-        self.game = game
-        lowLevelVector = numpy.array([1,0,0,0,0,1,1,1,1,1,1,1])
-        lowLevelWeights = numpy.array([1,1,1,1,1,1,1,1,1,1,1,1])
-        self.update(self.game.getGameElements())
+    def __init__(self):
+        self.LowLevelFeatures = numpy.array([1,0,0,0,0,1,1,1,1,1,1,1])
+        self.LowLevelWeights = numpy.array([1,1,1,1,1,1,1,1,1,1,1,1])
 
     #update feature vector
     #DO NOT update first value- always keep at 1
-    def update_features(self, state, action):
+    def update_features(self, state):
         # this method should update the vector according to the game elements "printout" received from self.game
         # implementation will depend on what we do for features
 
         # TODO: syntax issues, block and playpiles are backwards
         gameElements = state.getGameElements()
-        blockPiles = gameElements(1)
+        blockPiles = gameElements.get("blockPiles")
         i=1
-        for pile in blockPiles:
-            self.lowLevelVector[i] = len(pile)
+
+        for key in blockPiles.keys():
+            pile = blockPiles.get(key)
+            self.LowLevelFeatures[i]=len(pile.cards)
+            i += 1
+
+        # for pile in blockPiles:
+        #     cards = pile.cards
+        #     self.LowLevelFeatures[i] = len(cards)
+        #     i += 1
 
         # get number of flipped cards in each play pile and update
-        playPiles = gameElements(2)
+        playPiles = gameElements.get("playPiles")
         i = 5
         for pile in playPiles:
-            self.lowLevelVector[i] = len(pile.getFlippedCards())
+            self.LowLevelFeatures[i] = len(pile.getFlippedCards())
+            i += 1
 
-        pass
 
-    #TODO update weight array with gradient stuff
-    def update_weights(self,alpha,gamma,reward):
-
-        for i in range(len(self.lowLevelWeights)):
-            self.lowLevelWeights[i] += self.lowLevelWeights[i] + alpha(reward +)
-
+    def update_weights(self,alpha, delta):
+        for i in range(len(self.LowLevelWeights)):
+            self.LowLevelWeights[i] += alpha*delta*self.LowLevelFeatures[i]
 
 
     #get Q using linear function approximation
@@ -60,14 +65,12 @@ class LowLevelVector:
             return 0
 
         #update features based on new state
-        self.update_features(state,action)
+        self.update_features(state)
 
         #sum all weights*features
         Q = 0
-        for i in range(self.lowLevelVector):
-            Q += self.lowLevelVector[i]*self.lowLevelWeights[i]
+        for i in range(len(self.LowLevelFeatures)):
+            Q += self.LowLevelFeatures[i]*self.LowLevelFeatures[i]
 
         return Q
-
-
 

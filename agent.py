@@ -5,144 +5,142 @@ from action import Action
 from numpy import array
 import numpy as np
 
-class agent:
+#Function to choose what action to take next, depending on next state and epsilon
+#@return next action
+def epsilon_greedy(features,state,epsilon):
 
-    #Function to choose what action to take next, depending on next state and epsilon
-    #@return next action
-    def epsilon_greedy(self,state,epsilon):
+    #find all valid moves that can be made- returns list of action objects
+    possible_moves = state.getPossibleMoves()
 
-        #find all valid moves that can be made- returns list of action objects
-        possible_moves = state.getPossibleMoves()
-        rewards = []
+    if len(possible_moves) == 0:
+        return Action(None,None,None,-1)
 
-        if len(possible_moves) == 0:
-            return Action(None,None,None,-1)
+    #get random number between 1-10
+    #if random number > epsilon*10 choose an action at random
+    random_chance = np.random.randint(1,11)
+    if random_chance > epsilon*10:
+        random_choice = np.random.randint(0,len(possible_moves))
+        return possible_moves[random_choice]
 
-        #get rewards corresponding to all possible moves
-        for i in range(len(possible_moves)):
+    #else choose move with highest Q value
+    #if there are multiple actions with the max Q value, choose one of them at random
+    Q_vals = []
+    for i in range(len(possible_moves)):
+        Q_vals.append(features.get_Q(state,possible_moves[i]))
 
-            #if action is a move between piles, 0 reward (or 5 if a card is flipped as a result)
-            if possible_moves[i].id == 1:
-                if possible_moves[i].flipBonus:
-                    rewards[i]=5
+    maxVal = max(Q_vals)
+    maxIndices = [i for i, j in enumerate(Q_vals) if j == maxVal]
+
+    #maxReward = max(rewards)
+    #maxIndices = [i for i, j in enumerate(rewards) if j==maxReward]
+    MaxIndex = np.random.randint(0,len(maxIndices))
+    return possible_moves[MaxIndex]
+
+"""
+@param alpha- learning rate
+@param gamma - discount factor
+@param epsilon  - exploration
+@param num_games - number games for training
+@param max_moves - maximum moves until game is considered a loss
+"""
+def SARSA(alpha, gamma, epsilon, num_games, max_moves,high_level,f_moves,f_scores,f_wins):
+
+    global won, total_score, moves
+    total_moves = []
+    final_scores = []
+    wins = []
+
+    #Get initial Q, depending on whether high or low level features
+    if high_level:
+        features = HighLevelVector()
+    else:
+        features = LowLevelVector()
+
+    for game in range(num_games):
+
+        won = False
+        print("Game number {0}".format(game))
+        total_score = 0
+        moves = 0
+
+        #get initial state, action, Q, based on new game
+        state = Game()
+        action = epsilon_greedy(features,state,epsilon)
+
+        while moves < max_moves:
+
+            #Get Q(s,a) before state gets updated with make move
+            Q_init = features.get_Q(state, action)
+
+            #make a move, update state and total score
+            # state automatically updates when making a move, no need to manually update value
+            reward = state.make_move(action)
+            total_score += reward
+            moves += 1
+
+            #get next action using epsilon greedy and corresponding Q
+            next_action = epsilon_greedy(features,state,epsilon)
+            Q_next = features.get_Q(state,next_action)
+            delta = reward + gamma*Q_next - Q_init
+            features.update_weights(alpha,delta)
+
+            #Update Q, feature weights, state, action
+            action = next_action
+
+            #If in terminal state (either won, can't move, or exceed move limit) break out of while loop
+            if Q_next == 0 or moves >= max_moves:
+                if state.checkIfCompleted():
+                    won = True
+                    print("nice")
                 else:
-                    rewards[i] = 0
+                    print("not nice")
+                break
 
-            #if action is a move from pile to block, 10 reward (or 15 if a card is flipped as a result)
-            elif possible_moves[i].id == 2:
-                if possible_moves[i].flipBonus:
-                    rewards[i]=15
-                else:
-                    rewards[i] = 10
-
-            #if action is a move from block to pile, -15 reward
-            elif possible_moves[i].id == 3:
-                rewards[i] = -15
-
-            #if action is draw card, 0 reward
-            elif possible_moves[i].id == 4:
-                rewards[i] = 0
-
-            #if action is recycle deck, -100 reward
-            elif possible_moves[i].id == 5:
-                rewards[i] = -100
-
-            #if action is move from waste to pile, 5 reward
-            elif possible_moves[i].id == 6:
-                rewards[i] = 5
-
-            #if action is move from waste to block, 10 reward
-            elif possible_moves[i].id == 7:
-                rewards[i] = 10
-
-        #get random number between 1-10
-        #if random number > epsilon*10 choose an action at random
-        random_chance = np.random.randint(1,11)
-        if random_chance > epsilon*10:
-            random_choice = np.random.randint(0,len(possible_moves))
-            return possible_moves[random_choice]
-
-        #else choose move with hightest reward
-        #if there are multiple actions with the max reward, choose one of them at random
-        maxReward = max(rewards)
-        maxIndices = [i for i, j in enumerate(rewards) if j==maxReward]
-        randomMaxIndex = np.random.randint(0,len(maxIndices))
-        return possible_moves[randomMaxIndex]
-
-    """
-    @param alpha- learning rate
-    @param gamma - discount factor
-    @param epsilon  - exploration
-    @param num_games - number games for training
-    @param max_moves - maximum moves until game is considered a loss
-    """
-    def SARSA(self, alpha, gamma, epsilon, num_games, max_moves,high_level):
-
-        total_moves = []
-        final_scores = []
-        wins = []
-
-        #Get initial Q, depending on whether high or low level features
-        if high_level:
-            features = HighLevelVector
+        #Update score and wins/losses list based off of win/loss
+        if won:
+            total_score += 1000
+            wins.append(1)
+            #f_wins.write("1, ")
         else:
-            features = LowLevelVector
+            total_score -= 1000
+            wins.append(0)
+            #f_wins.write("0, ")
 
-        for game in range(num_games):
 
-            won = False
-            #print("Game number {game}")
-            total_score = 0
-            moves = 0
+        # print("score: " + str(total_score) + ", moves: " + str(total_moves) + ",won: " + str(won) )
+        total_moves.append(moves)
+        final_scores.append(total_score)
 
-            #get initial state, action, Q, based on new game
-            state = Game()
-            action = self.epsilon_greedy(state,epsilon)
-            Q = features.get_Q(state,action)
+        #f_moves.write(str(moves))
+        #f_moves.write(", ")
+        #f_scores.write(str(total_score))
+        #f_scores.write(", ")
 
-            while moves < max_moves:
+    return total_moves, final_scores, wins
 
-                #make a move, update state and total score
-                # state automatically updates when making a move, no need to manually update value
-                reward = state.make_move(action)
-                total_score += reward
-                moves += 1
-
-                #get next action using epsilon greedy and corresponding Q
-                next_action = self.epsilon_greedy(state,epsilon)
-                next_Q = features.get_Q(state,next_action)
-
-                #Update Q, feature weights, state, action
-                Q += alpha*[reward+(gamma*next_Q-Q)]
-                features.update_weights(alpha,gamma,reward)
-                action = next_action
-
-                #If in terminal state (either won, can't move, or exceed move limit) break out of while loop
-                if next_Q == 0 or moves >= 500:
-                    if game.checkIfCompleted():
-                        won = True
-                    break
-
-            #Update score and wins/losses list based off of win/loss
-            if won:
-                total_score += 1000
-                wins.append(1)
-            else:
-                total_score -= 1000
-                wins.append(0)
-
-            total_moves.append(moves)
-            final_scores.append(total_score)
-
-        return total_moves, final_scores, wins
+def agent():
 
     LEARNING_RATE = 0.1
     DISCOUNT_FACTOR = 0.9
     EPSILON = 0.9
-    NUM_TRAINING_GAMES = 10
+    NUM_TRAINING_GAMES = 100
     MOVE_LIMIT = 500
     HIGH_LEVEL = False
 
-    total_moves, final_scores, wins = SARSA(LEARNING_RATE,DISCOUNT_FACTOR,EPSILON,NUM_TRAINING_GAMES,MOVE_LIMIT,HIGH_LEVEL)
+    f_moves = open("low_total_moves.txt","a")
+    f_scores = open("low_final_scores.txt","a")
+    f_wins = open("low_wins.txt","a")
 
-    #TODO: use total move and final score data to do some graphing / analysis
+    total_moves, final_scores, wins = SARSA(LEARNING_RATE,DISCOUNT_FACTOR,EPSILON,NUM_TRAINING_GAMES,MOVE_LIMIT,HIGH_LEVEL,f_moves,f_scores,f_wins)
+
+    # print(total_moves)
+    # print(final_scores)
+    # print(wins)
+
+    f_moves.close()
+    f_scores.close()
+    f_wins.close()
+
+
+if __name__ == "__main__":
+    agent()
