@@ -4,7 +4,6 @@ from low_level_vector import LowLevelVector
 from action import Action
 from numpy import array
 import numpy as np
-import plotly.graph_objects as go
 
 #Function to choose what action to take next, depending on next state and epsilon
 #@return next action
@@ -92,26 +91,29 @@ def SARSA(alpha, gamma, epsilon, num_games, max_moves,high_level,f_moves,f_score
             if Q_next == 0 or moves >= max_moves:
                 if state.checkIfCompleted():
                     won = True
+                    print("nice")
+                else:
+                    print("not nice")
                 break
 
         #Update score and wins/losses list based off of win/loss
         if won:
             total_score += 1000
             wins.append(1)
-            f_wins.write("1, ")
+            #f_wins.write("1, ")
         else:
             total_score -= 1000
             wins.append(0)
-            f_wins.write("0, ")
+            #f_wins.write("0, ")
 
         # print("score: " + str(total_score) + ", moves: " + str(total_moves) + ",won: " + str(won) )
         total_moves.append(moves)
         final_scores.append(total_score)
 
-        f_moves.write(str(moves))
-        f_moves.write(", ")
-        f_scores.write(str(total_score))
-        f_scores.write(", ")
+        #f_moves.write(str(moves))
+        #f_moves.write(", ")
+        #f_scores.write(str(total_score))
+        #f_scores.write(", ")
 
     return total_moves, final_scores, wins
 

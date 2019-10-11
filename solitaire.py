@@ -324,12 +324,11 @@ class Game:
     #1. Move a card between two piles - no reward
     def moveBetweenPiles(self,movingCards,origin,dest):
 
-        origin.cards.pop(0)
-
         for card in movingCards:
             dest.addCard(card)
+            origin.cards.pop(0)
 
-        #print("moved between piles")
+        #print("Moved between piles")
 
         if len(origin.cards) > 0 and not origin.cards[0].flipped:
             origin.cards[0].flip()
