@@ -414,3 +414,12 @@ class Game:
 
         elif action.id == 7:
             return self.wasteToBlock(movingCards,origin,dest)
+
+    def printGame(self):
+        returnString = {
+            "playPiles": [str(pile) for pile in self.playPiles],
+            "blockPiles": {suit: str(pile) for suit, pile in self.blockPiles.items()},
+            "trash pile up": ", ".join([str(card) for card in self.trashPileUp]),
+            "trash pile down": ", ".join([str(card) for card in self.trashPileDown])
+        }
+        return returnString
