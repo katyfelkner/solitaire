@@ -12,7 +12,7 @@ class HighLevelVector:
     #7-13: highest card in each block
     def __init__(self):
         self.HighLevelFeatures = numpy.array([1,1,1,1,1,1,1,1,1,1,1,1,1])
-        self.HighLevelWeights = numpy.array([1,1,1,1,1,1,1,1,1,1,1,1,1])
+        self.HighLevelWeights = numpy.array([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
 
     #update feature vector
     #DO NOT update first value- always keep at 1
@@ -68,7 +68,9 @@ class HighLevelVector:
 
     def update_weights(self,alpha, delta):
         for i in range(len(self.HighLevelWeights)):
-            self.HighLevelWeights[i] += alpha*delta*self.HighLevelFeatures[i]
+            test = alpha * delta * self.HighLevelFeatures[i]
+            self.HighLevelWeights[i] += test
+            self.HighLevelWeights[i] /= 10
 
 
     #get Q using linear function approximation
@@ -89,6 +91,6 @@ class HighLevelVector:
         #sum all weights*features
         Q = 0
         for i in range(len(self.HighLevelFeatures)):
-            Q += self.HighLevelFeatures[i]*self.HighLevelFeatures[i]
+            Q += self.HighLevelFeatures[i]*self.HighLevelWeights[i]
 
         return Q

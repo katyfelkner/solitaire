@@ -1,7 +1,6 @@
 # this file should contain an implementation of a Low-level state vector
 
 # tentatively, using numpy arrays for vectors
-import numpy
 from numpy import array
 from solitaire import Game
 import numpy
@@ -23,8 +22,6 @@ class LowLevelVector:
     def update_features(self, state):
         # this method should update the vector according to the game elements "printout" received from self.game
         # implementation will depend on what we do for features
-
-        # TODO: syntax issues, block and playpiles are backwards
         gameElements = state.getGameElements()
         blockPiles = gameElements.get("blockPiles")
         i=1
@@ -46,16 +43,16 @@ class LowLevelVector:
             self.LowLevelFeatures[i] = len(pile.getFlippedCards())
             i += 1
 
-
-    def update_weights(self,alpha, delta):
+    def update_weights(self,alpha,delta):
         for i in range(len(self.LowLevelWeights)):
-            self.LowLevelWeights[i] += alpha*delta*self.LowLevelFeatures[i]
-            # scale weight to keep numbers from getting arbitrarily large
-            self.LowLevelWeights[i] /= 100
+            test = alpha*delta*self.LowLevelFeatures[i]
+            self.LowLevelWeights[i] += test
+            self.LowLevelWeights[i] /= 10
 
     #get Q using linear function approximation
     #if Q is in terminating state, either by out of moves or winning, return 0
     def get_Q(self,state,action):
+
 
         #if action id is -1 (i.e. no possible moves) return 0
         if action.id == -1:
@@ -71,7 +68,7 @@ class LowLevelVector:
         #sum all weights*features
         Q = 0
         for i in range(len(self.LowLevelFeatures)):
-            Q += self.LowLevelFeatures[i]*self.LowLevelFeatures[i]
+            Q += self.LowLevelFeatures[i]*self.LowLevelWeights[i]
 
         return Q
 
