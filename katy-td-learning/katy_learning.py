@@ -27,6 +27,7 @@
 
 from solitaire import Game
 import random
+from low_level_vector import LowLevelVector
 
 class QLearningAgent:
 
@@ -44,11 +45,8 @@ class QLearningAgent:
         self.ALPHA = alpha
         self.MOVES_PER_GAME = moves
         self.NUM_GAMES = games
-        self.weights = [1,1,1,1,1,1,1,1,1,1,1,1] # weights array, all init to one
+        self.feature_vector = LowLevelVector()
         self.game = None
-        self.feature_vector = None
-        # we are assuming the low-level features for now
-        # TODO: check this
 
     def decreasing_e_greedy(self, num_games, epsilon):
         """
@@ -74,29 +72,23 @@ class QLearningAgent:
         # epsilon % chance of selecting a random action
         if random.random() < scaled_epsilon:
             return random.choice(possible_moves)
-
-            # else, choose based on a predicted q
-        """
-        max_q = None
-        max_a = []
-        for a in possible_moves:
-            # calculate q(s, a)
-
-            # TODO: this line is very wrong
-            Q_a = self.game.get_predicted_reward(a) + self.GAMMA * sum(self.feature_vector[i] * self.weights[i] for i in range(len(self.feature_vector)))
-
-            # compare to max
-            if max_q is None or Q_a > max_q:
-                max_q = Q_a
-                max_a = [a]
-            elif Q_a == max_q:
-                # need to select randomly among equal q values
-                max_a.append(a)
-
-        """
         # else, choose based on a predicted q
 
-        max_q = None
+        # else choose move with highest Q value
+        # if there are multiple actions with the max Q value, choose one of them at random
+        Q_vals = []
+        for i in range(len(possible_moves)):
+            Q_vals.append(self.feature_vector.get_Q(self.game, possible_moves[i]))
+
+        maxVal = max(Q_vals)
+        maxIndices = [i for i, j in enumerate(Q_vals) if j == maxVal]
+
+        # maxReward = max(rewards)
+        # maxIndices = [i for i, j in enumerate(rewards) if j==maxReward]
+        MaxIndex = random.choice(maxIndices)
+        return possible_moves[MaxIndex]
+
+        """max_q = None
         max_a = []
         for a in possible_moves:
             # calculate q(s, a)
@@ -121,7 +113,7 @@ class QLearningAgent:
         if len(max_a) == 0:
             return None
         else:
-            return random.choice(max_a)
+            return random.choice(max_a) """
 
     def learn(self):
 
@@ -131,42 +123,49 @@ class QLearningAgent:
 
         # start looping over games
         for i in range(self.NUM_GAMES):
-            # reinitialize feature vector and game object
-            self.feature_vector = [1,0,0,0,0,1,1,1,1,1,1,1]
             self.game = Game()
-            print(self.game.getGameElements())
+            print(self.game.printGame())
 
             won = False
             print("Game number", i)
             total_score = 0
             moves = 0
 
+            action = self.decreasing_e_greedy(i, self.INITIAL_EPSILON)
             while moves < self.MOVES_PER_GAME:
-                # choose A according to a policy
-                action = self.decreasing_e_greedy(i, self.INITIAL_EPSILON)
                 if action is None:
                     break
+
+                # get initial Q
+                Q_start = self.feature_vector.get_Q(self.game, action)
 
                 # take action A and observe R
                 reward = self.game.make_move(action)
                 total_score += reward
 
 
-                # observe S'
-                s_prime = self.get_features()
+                # calculate Q for all possible next actions
+                # get next action using epsilon greedy and corresponding Q
+                next_actions = self.game.getPossibleMoves()
+                max_q = None
+                for a in next_actions:
+                    Q_a = self.feature_vector.get_Q(self.game, a)
+                    if max_q is None or Q_a > max_q:
+                        max_q = Q_a
 
-                # Update weights
-                q_s_prime = sum([s_prime[i] * self.weights[i] for i in range(len(s_prime))])
-                q_s = sum([self.feature_vector[i] * self.weights[i] for i in range(len(self.feature_vector))])
-                for i in range(len(self.weights)):
-                    self.weights[i] = self.weights[i] + self.ALPHA * (reward + self.GAMMA * q_s_prime - q_s) * self.feature_vector[i]
+                # terminal state
+                if max_q is None:
+                    max_q = 0
 
-                # Update S and check for termination
-                self.feature_vector = s_prime
+                delta = reward + self.GAMMA * max_q - Q_start
+                self.feature_vector.update_weights(self.ALPHA, delta)
 
                 if self.game.checkIfCompleted():
                     won = True
                     break
+
+                # select next action
+                action = self.decreasing_e_greedy(i, self.INITIAL_EPSILON)
                 moves += 1
 
             #Update score and wins/losses list based off of win/loss
@@ -180,7 +179,7 @@ class QLearningAgent:
 
             total_moves.append(moves)
             final_scores.append(total_score)
-            print(self.game.getGameElements())
+            print(self.game.printGame())
 
 
 
@@ -215,13 +214,14 @@ class QLearningAgent:
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EPSILON = 0.1
-NUM_TRAINING_GAMES = 1000
+NUM_TRAINING_GAMES = 10
 MOVE_LIMIT = 1000
 
 agent = QLearningAgent(EPSILON, DISCOUNT_FACTOR, LEARNING_RATE, MOVE_LIMIT, NUM_TRAINING_GAMES)
 
 total_moves, final_scores, wins = agent.learn()
 
+print(agent.feature_vector.LowLevelWeights)
 print(total_moves)
 print(final_scores)
 print(wins)

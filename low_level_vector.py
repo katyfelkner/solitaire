@@ -16,7 +16,7 @@ class LowLevelVector:
     #keep corresponding weight array of feature vector
     def __init__(self):
         self.LowLevelFeatures = numpy.array([1,0,0,0,0,1,1,1,1,1,1,1])
-        self.LowLevelWeights = numpy.array([1,1,1,1,1,1,1,1,1,1,1,1])
+        self.LowLevelWeights = numpy.array([1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0])
 
     #update feature vector
     #DO NOT update first value- always keep at 1
@@ -50,7 +50,8 @@ class LowLevelVector:
     def update_weights(self,alpha, delta):
         for i in range(len(self.LowLevelWeights)):
             self.LowLevelWeights[i] += alpha*delta*self.LowLevelFeatures[i]
-
+            # scale weight to keep numbers from getting arbitrarily large
+            self.LowLevelWeights[i] /= 100
 
     #get Q using linear function approximation
     #if Q is in terminating state, either by out of moves or winning, return 0
