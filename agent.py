@@ -75,6 +75,9 @@ def SARSA(alpha, gamma, epsilon, num_games, max_moves,high_level,f_moves,f_score
             #make a move, update state and total score
             # state automatically updates when making a move, no need to manually update value
             reward = state.make_move(action)
+            if state.checkIfCompleted():
+                wins.append(1)
+                reward += 10000
             total_score += reward
             moves += 1
 
@@ -97,15 +100,10 @@ def SARSA(alpha, gamma, epsilon, num_games, max_moves,high_level,f_moves,f_score
                 break
 
         #Update score and wins/losses list based off of win/loss
-        if won:
-            total_score += 1000
-            wins.append(1)
-            #f_wins.write("1, ")
-        else:
+        if not state.checkIfCompleted():
             total_score -= 1000
             wins.append(0)
             #f_wins.write("0, ")
-
 
         # print("score: " + str(total_score) + ", moves: " + str(total_moves) + ",won: " + str(won) )
         total_moves.append(moves)
@@ -123,7 +121,7 @@ def agent():
     LEARNING_RATE = 0.1
     DISCOUNT_FACTOR = 0.9
     EPSILON = 0.9
-    NUM_TRAINING_GAMES = 100
+    NUM_TRAINING_GAMES = 40
     MOVE_LIMIT = 500
     HIGH_LEVEL = False
 
@@ -134,7 +132,7 @@ def agent():
     total_moves, final_scores, wins = SARSA(LEARNING_RATE,DISCOUNT_FACTOR,EPSILON,NUM_TRAINING_GAMES,MOVE_LIMIT,HIGH_LEVEL,f_moves,f_scores,f_wins)
 
     # print(total_moves)
-    # print(final_scores)
+    print(final_scores)
     # print(wins)
 
     f_moves.close()
